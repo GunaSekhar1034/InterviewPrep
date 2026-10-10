@@ -44,6 +44,7 @@ body {
   gap: 20px;
   flex-wrap: wrap;
   padding: 12px 20px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
   background: linear-gradient(180deg, var(--bg-2), var(--bg));
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
@@ -236,7 +237,7 @@ body {
 .footer {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  padding: 7px 20px; font-size: 12px; color: var(--text-dim);
+  padding: 7px 20px calc(7px + env(safe-area-inset-bottom, 0px)); font-size: 12px; color: var(--text-dim);
   background: var(--bg-2); border-top: 1px solid var(--border);
 }
 .footer .voice-hint { flex: 1; text-align: right; }
@@ -333,8 +334,20 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #3a4770; }
 
 @media (max-width: 860px) {
-  .layout { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  /* Let the whole page scroll natively on phones (was collapsing the content area). */
+  html, body { height: auto; }
+  body { min-height: 100vh; min-height: 100dvh; }
+  .layout { flex-direction: column; min-height: auto; }
+  .sidebar {
+    width: 100%; height: auto; position: static; overflow: visible;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .content {
+    flex: 1; overflow: visible;
+    padding: 16px 14px calc(80px + env(safe-area-inset-bottom, 0px));
+  }
   .progress-wrap { width: 100%; }
   .footer .voice-hint { display: none; }
+  .q-text { font-size: 15px; }
+  .code-block { font-size: 12px; }
 }
