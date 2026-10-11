@@ -16,5 +16,12 @@ window.IP_CONFIG = {
   // provider: "gemini" | "openai" | "openai-compat" | "opencode"
   provider: "",
   base: "",
-  model: ""
+  model: "",
+
+  // GitHub sync: where your added questions are stored so every device sees them.
+  // The token is NEVER put here - paste it once per device in the app's
+  // "Sync to GitHub" dialog (it stays in that browser only).
+  repo: "GunaSekhar1034/InterviewPrep",
+  branch: "main",
+  path: "my-questions.json"
 };

@@ -49,6 +49,7 @@
     <nav id="topicNav" class="topic-nav"></nav>
     <div class="side-tools">
       <button id="addOpen" class="tool-btn add-tool">➕ Add a question</button>
+      <button id="syncOpen" class="tool-btn">☁ Sync to GitHub</button>
       <button id="expandAll" class="tool-btn">Show all answers</button>
       <button id="collapseAll" class="tool-btn">Hide all answers</button>
       <button id="exportMine" class="tool-btn">⬇ Export my questions</button>
@@ -64,7 +65,7 @@
 
 <footer class="footer">
   <span id="resultCount"></span>
-  <span class="voice-hint">Tip: use the mic to dictate your spoken answer, 🔊 to hear the question read aloud. Notes &nbsp;progress are saved locally in your browser.</span>
+  <span class="voice-hint">Tip: use the mic to dictate your spoken answer, 🔊 to hear the question read aloud. Questions sync through your GitHub repo; notes &amp; progress stay in this browser.</span>
 </footer>
 
 <!-- Add-a-question modal -->
@@ -161,6 +162,90 @@
           <button id="addRegen" class="btn">↻ Regenerate</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sync-to-GitHub modal -->
+<div id="syncModal" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Sync questions to GitHub">
+    <div class="modal-head">
+      <h2>☁ Sync questions to GitHub</h2>
+      <button id="syncClose" class="modal-close" aria-label="Close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <p class="hint">
+        Questions you add are saved to a file in your GitHub repository so they show up on every
+        device (iPhone, laptop, …). <strong>Downloading is automatic</strong> on load — it needs no
+        token. <strong>Uploading</strong> needs a GitHub token with write access to this one repo.
+      </p>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Repository (owner/name)</span>
+          <input id="syncRepo" class="add-select" placeholder="GunaSekhar1034/InterviewPrep" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="field-label">Branch</span>
+          <input id="syncBranch" class="add-select" placeholder="main" autocomplete="off" />
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">File path in repo</span>
+          <input id="syncPath" class="add-select" placeholder="my-questions.json" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="field-label">GitHub token (Contents: read &amp; write)</span>
+          <input id="syncToken" type="password" class="add-select" placeholder="github_pat_…" autocomplete="off" />
+        </label>
+      </div>
+
+      <label class="checkbox-line">
+        <input id="syncAuto" type="checkbox" checked />
+        <span>Automatically upload after I add or delete a question</span>
+      </label>
+
+      <p class="hint">
+        Create a <strong>fine-grained token</strong> at
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>:
+        set <em>Repository access</em> to only <code>InterviewPrep</code>, and
+        <em>Permissions → Repository permissions → Contents</em> to <strong>Read and write</strong>.
+        The token is stored only in this browser.
+      </p>
+
+      <div class="modal-actions">
+        <button id="syncSave" class="btn">💾 Save settings</button>
+        <button id="syncPull" class="btn">⬇ Download from repo</button>
+        <button id="syncPush" class="btn primary">⬆ Upload to repo</button>
+        <button id="syncImport" class="btn">📥 Import file</button>
+      </div>
+
+      <div id="syncStatus" class="add-status" hidden></div>
+      <p id="syncLast" class="hint"></p>
+      <input id="syncFile" type="file" accept="application/json,.json,.js" hidden />
+
+      <details class="ai-settings">
+        <summary>🔎 Auto-fetch new interview questions from the web (daily)</summary>
+        <p class="hint">
+          When you open the app, if it hasn't already fetched today, it searches the internet and
+          adds brand-new questions into the matching category (Azure Data Factory, Spark, Delta Lake,
+          …). It uses the <strong>AI settings</strong> from "➕ Add a question" — live web search
+          works with Google Gemini or OpenAI (paste an API key there). Each new question is also
+          uploaded to your GitHub file so every device gets it.
+        </p>
+        <label class="checkbox-line">
+          <input id="autoEnable" type="checkbox" checked />
+          <span>Fetch new questions automatically (once per day)</span>
+        </label>
+        <div class="modal-actions">
+          <button id="autoNow" class="btn primary">⚡ Fetch new questions now</button>
+        </div>
+        <div id="autoStatus" class="add-status" hidden></div>
+        <p id="autoLast" class="hint"></p>
+      </details>
     </div>
   </div>
 </div>

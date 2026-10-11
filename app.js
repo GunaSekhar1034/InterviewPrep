@@ -4,7 +4,8 @@
   var MY_TOPIC_ID = "my-questions";
 
   // Build the merged topic list; the "My Questions" topic is injected dynamically.
-  var TOPICS = (window.QB || []).slice();
+  var BASE_TOPICS = (window.QB || []).slice();
+  var TOPICS = BASE_TOPICS.slice();
 
   var state = {
     role: "all",
@@ -22,7 +23,9 @@
     base: "ip.base",
     model: "ip.model",
     geminiKey: "ip.geminiKey",
-    geminiModel: "ip.geminiModel"
+    geminiModel: "ip.geminiModel",
+    autoEnable: "ip.auto.enable",
+    autoLast: "ip.auto.last"
   };
 
   var PROVIDERS = {
@@ -62,23 +65,55 @@
   }
   var userQuestions = loadArray(STORE.userQuestions);
 
-  function myTopic() {
-    return {
-      id: MY_TOPIC_ID,
-      name: "My Questions",
-      icon: "\u2B50",
-      roles: ["ade", "architect"],
-      custom: true,
-      questions: userQuestions.map(function (u) {
-        return { q: u.q, a: u.a || "", type: u.type || "concept", code: u.code || "", uid: u.id, cat: u.category || "", _user: u };
-      })
-    };
+  // Every user question carries an id + updatedAt so devices can merge safely.
+  (function ensureUpdated() {
+    var changed = false;
+    userQuestions.forEach(function (u) {
+      if (!u.id) { u.id = "u" + (u.createdAt || Date.now()).toString(36) + Math.random().toString(36).slice(2, 6); changed = true; }
+      if (!u.updatedAt) { u.updatedAt = u.createdAt || Date.now(); changed = true; }
+    });
+    if (changed) save(STORE.userQuestions, userQuestions);
+  })();
+
+  // Find the built-in topic whose display name matches a category string.
+  function findTopicByCategory(cat) {
+    if (!cat) return null;
+    var c = String(cat).trim().toLowerCase();
+    for (var i = 0; i < BASE_TOPICS.length; i++) {
+      if (String(BASE_TOPICS[i].name).toLowerCase() === c) return BASE_TOPICS[i];
+    }
+    return null;
   }
 
-  // Insert / refresh / remove the "My Questions" topic in TOPICS.
+  function userRecord(u) {
+    return { q: u.q, a: u.a || "", type: u.type || "concept", code: u.code || "", uid: u.id, cat: u.category || "", _user: u };
+  }
+
+  // Rebuild TOPICS: categorized user questions are injected into their topic
+  // (so "add into the corresponding category" works); the rest stay in "My Questions".
   function refreshMyTopic() {
-    TOPICS = TOPICS.filter(function (t) { return t.id !== MY_TOPIC_ID; });
-    if (userQuestions.length) TOPICS.push(myTopic());
+    TOPICS = BASE_TOPICS.map(function (t) {
+      return { id: t.id, name: t.name, icon: t.icon, roles: (t.roles || []).slice(), questions: (t.questions || []).slice() };
+    });
+    var byName = {};
+    TOPICS.forEach(function (t) { byName[String(t.name).trim().toLowerCase()] = t; });
+    var misc = [];
+    userQuestions.forEach(function (u) {
+      var rec = userRecord(u);
+      var target = u.category && byName[String(u.category).trim().toLowerCase()];
+      if (target) target.questions.push(rec);
+      else misc.push(rec);
+    });
+    if (misc.length) {
+      TOPICS.push({
+        id: MY_TOPIC_ID,
+        name: "My Questions",
+        icon: "\u2B50",
+        roles: ["ade", "architect"],
+        custom: true,
+        questions: misc
+      });
+    }
   }
   refreshMyTopic();
 
@@ -301,18 +336,22 @@
       actions.appendChild(srcBadge);
     }
 
-    if (topic.custom && q._user) {
+    if (q._user) {
       var delBtn = document.createElement("button");
       delBtn.className = "btn icon danger";
       delBtn.title = "Delete this question";
       delBtn.textContent = "\uD83D\uDDD1";
       delBtn.addEventListener("click", function () {
         if (!confirm("Delete this question from My Questions?")) return;
-        userQuestions = userQuestions.filter(function (u) { return u.id !== q._user.id; });
+        var delId = q._user.id;
+        userQuestions = userQuestions.filter(function (u) { return u.id !== delId; });
         save(STORE.userQuestions, userQuestions);
+        tombstones[delId] = Date.now();
+        save(GH.tombstones, tombstones);
         refreshMyTopic();
         renderSidebar();
         renderQuestions();
+        ghAutoPush();
       });
       actions.appendChild(delBtn);
     }
@@ -510,6 +549,540 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
+
+  /* ---------------- GitHub sync ---------------- */
+  var GH = {
+    repo: "ip.gh.repo",
+    branch: "ip.gh.branch",
+    path: "ip.gh.path",
+    token: "ip.gh.token",
+    auto: "ip.gh.auto",
+    tombstones: "ip.gh.tombstones",
+    lastSync: "ip.gh.lastSync"
+  };
+
+  // Guess "owner/repo" when hosted on GitHub Pages (https://owner.github.io/repo/).
+  function detectRepo() {
+    try {
+      var m = (location.hostname || "").match(/^([^.]+)\.github\.io$/i);
+      if (m) {
+        var seg = (location.pathname || "/").split("/").filter(function (s) { return s; });
+        if (seg[0]) return m[1] + "/" + seg[0];
+      }
+    } catch (e) {}
+    return "";
+  }
+
+  var ghCfg = {
+    repo: localStorage.getItem(GH.repo) || IPCFG.repo || detectRepo() || "",
+    branch: localStorage.getItem(GH.branch) || IPCFG.branch || "main",
+    path: localStorage.getItem(GH.path) || IPCFG.path || "my-questions.json",
+    token: localStorage.getItem(GH.token) || "",
+    auto: (localStorage.getItem(GH.auto) || "1") === "1"
+  };
+
+  // Deleted question ids, kept so a deletion propagates to other devices.
+  var tombstones = load(GH.tombstones) || {};
+
+  function persistSync() {
+    try {
+      localStorage.setItem(GH.repo, ghCfg.repo);
+      localStorage.setItem(GH.branch, ghCfg.branch);
+      localStorage.setItem(GH.path, ghCfg.path);
+      localStorage.setItem(GH.token, ghCfg.token);
+      localStorage.setItem(GH.auto, ghCfg.auto ? "1" : "0");
+    } catch (e) {}
+  }
+
+  function safeParse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
+
+  function utf8ToB64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  function b64ToUtf8(b64) {
+    var bin = atob((b64 || "").replace(/\s/g, ""));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    try { return new TextDecoder("utf-8").decode(bytes); }
+    catch (e) { return decodeURIComponent(escape(bin)); }
+  }
+
+  // Last-write-wins union of local + remote by id, honouring tombstones.
+  function mergeRecords(remoteList) {
+    var byId = {};
+    function consider(rec) {
+      if (!rec || !rec.id) return;
+      var ts = rec.updatedAt || rec.createdAt || 0;
+      if (rec.deleted) {
+        if (!tombstones[rec.id] || tombstones[rec.id] < ts) tombstones[rec.id] = ts;
+        return;
+      }
+      var cur = byId[rec.id];
+      if (!cur || (cur.updatedAt || cur.createdAt || 0) < ts) byId[rec.id] = rec;
+    }
+    userQuestions.forEach(consider);
+    (remoteList || []).forEach(consider);
+
+    var merged = [];
+    Object.keys(byId).forEach(function (id) {
+      var rec = byId[id];
+      var ts = rec.updatedAt || rec.createdAt || 0;
+      if (tombstones[id] && tombstones[id] >= ts) return;
+      merged.push(rec);
+    });
+    merged.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+    // Sweep stale tombstones: a live edit newer/equal to the delete undo it.
+    Object.keys(tombstones).forEach(function (id) {
+      var rec = byId[id];
+      if (rec && (rec.updatedAt || rec.createdAt || 0) >= tombstones[id]) delete tombstones[id];
+    });
+    save(GH.tombstones, tombstones);
+    return merged;
+  }
+
+  function applyMerged(merged) {
+    userQuestions = merged;
+    save(STORE.userQuestions, userQuestions);
+    refreshMyTopic();
+  }
+
+  function ghApiUrl() {
+    return "https://api.github.com/repos/" + ghCfg.repo + "/contents/" +
+      ghCfg.path.split("/").map(encodeURIComponent).join("/");
+  }
+  function ghRawUrl() {
+    return "https://raw.githubusercontent.com/" + ghCfg.repo + "/" +
+      encodeURIComponent(ghCfg.branch) + "/" +
+      ghCfg.path.split("/").map(encodeURIComponent).join("/") + "?t=" + Date.now();
+  }
+
+  // Read the JSON file. Uses the API (for the blob sha) when a token is set,
+  // otherwise the public raw URL (works without a token on a public repo).
+  function ghFetchRemote() {
+    var useApi = !!ghCfg.token;
+    var url = useApi ? (ghApiUrl() + "?ref=" + encodeURIComponent(ghCfg.branch)) : ghRawUrl();
+    var headers = useApi ? { "Authorization": "Bearer " + ghCfg.token, "Accept": "application/vnd.github+json" } : {};
+    return fetch(url, { headers: headers, cache: "no-store" }).then(function (res) {
+      if (res.status === 404) return { list: [], sha: null, exists: false };
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("GitHub refused the read (HTTP " + res.status + "). Check the repository name and that the token can read Contents.");
+      }
+      if (!res.ok) throw new Error("GitHub read failed (HTTP " + res.status + ").");
+      return res.json().then(function (data) {
+        if (useApi) {
+          var parsed = safeParse(b64ToUtf8(data.content || ""));
+          return { list: (parsed && parsed.questions) || [], sha: data.sha, exists: true };
+        }
+        return { list: (data && data.questions) || (Array.isArray(data) ? data : []), sha: null, exists: true };
+      });
+    });
+  }
+
+  function ghPull() {
+    if (!ghCfg.repo) return Promise.reject(new Error("No repository set. Open \"Sync to GitHub\" first."));
+    return ghFetchRemote().then(function (remote) {
+      var merged = mergeRecords(remote.list);
+      applyMerged(merged);
+      renderSidebar();
+      renderQuestions();
+      try { localStorage.setItem(GH.lastSync, String(Date.now())); } catch (e) {}
+      updateSyncInfo();
+      return { exists: remote.exists, count: merged.length };
+    });
+  }
+
+  function ghBuildPayload() {
+    var out = {};
+    userQuestions.forEach(function (u) { out[u.id] = u; });
+    Object.keys(tombstones).forEach(function (id) {
+      var rec = out[id];
+      var ts = tombstones[id];
+      if (rec && (rec.updatedAt || rec.createdAt || 0) >= ts) {
+        delete tombstones[id];
+        return;
+      }
+      out[id] = { id: id, deleted: true, updatedAt: ts };
+    });
+    save(GH.tombstones, tombstones);
+    return {
+      version: 1,
+      updatedAt: Date.now(),
+      questions: Object.keys(out).map(function (k) { return out[k]; })
+    };
+  }
+
+  function ghPut(payload, sha) {
+    var body = {
+      message: "Interview Prep: update my questions",
+      content: utf8ToB64(JSON.stringify(payload, null, 2)),
+      branch: ghCfg.branch
+    };
+    if (sha) body.sha = sha;
+    return fetch(ghApiUrl(), {
+      method: "PUT",
+      headers: {
+        "Authorization": "Bearer " + ghCfg.token,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.status === 409) { var e = new Error("conflict"); e.conflict = true; throw e; }
+      return res.text().then(function (t) {
+        if (!res.ok) {
+          var d = safeParse(t);
+          throw new Error((d && d.message) || ("GitHub write failed (HTTP " + res.status + ")."));
+        }
+        try { localStorage.setItem(GH.lastSync, String(Date.now())); } catch (e) {}
+        return safeParse(t) || {};
+      });
+    });
+  }
+
+  function ghPush(tries) {
+    if (!ghCfg.repo) return Promise.reject(new Error("No repository set. Open \"Sync to GitHub\" first."));
+    if (!ghCfg.token) return Promise.reject(new Error("Add a GitHub token (Contents: read & write) in \"Sync to GitHub\" to upload."));
+    tries = tries || 0;
+    return ghFetchRemote().then(function (remote) {
+      applyMerged(mergeRecords(remote.list));
+      return ghPut(ghBuildPayload(), remote.sha);
+    }).catch(function (err) {
+      if (err && err.conflict && tries < 2) return ghPush(tries + 1);
+      throw err;
+    }).then(function (r) {
+      renderSidebar();
+      renderQuestions();
+      updateSyncInfo();
+      return r;
+    });
+  }
+
+  // Floating toast used for background auto-uploads.
+  function showSyncToast(msg) {
+    var t = document.createElement("div");
+    t.className = "sync-toast";
+    t.innerHTML = '<span class="spinner"></span>' + msg;
+    document.body.appendChild(t);
+    function done(html, cls) {
+      t.className = "sync-toast " + cls;
+      t.innerHTML = html;
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, cls === "err" ? 6000 : 2500);
+    }
+    return {
+      success: function (m) { done("✅ " + (m || "Synced"), "ok"); },
+      error: function (m) { done("⚠ " + m, "err"); }
+    };
+  }
+
+  function ghAutoPush() {
+    if (!ghCfg.auto || !ghCfg.token || !ghCfg.repo) return;
+    var toast = showSyncToast("Uploading to GitHub…");
+    ghPush().then(function () {
+      toast.success("Saved to GitHub — available on your other devices");
+    }).catch(function (err) {
+      toast.error("Saved on this device, but GitHub upload failed: " + escapeHtml(err.message || "unknown error"));
+    });
+  }
+
+  /* ---------------- Sync modal ---------------- */
+  var sm = {
+    open: document.getElementById("syncOpen"),
+    overlay: document.getElementById("syncModal"),
+    close: document.getElementById("syncClose"),
+    repo: document.getElementById("syncRepo"),
+    branch: document.getElementById("syncBranch"),
+    path: document.getElementById("syncPath"),
+    token: document.getElementById("syncToken"),
+    auto: document.getElementById("syncAuto"),
+    save: document.getElementById("syncSave"),
+    pull: document.getElementById("syncPull"),
+    push: document.getElementById("syncPush"),
+    importBtn: document.getElementById("syncImport"),
+    file: document.getElementById("syncFile"),
+    status: document.getElementById("syncStatus"),
+    last: document.getElementById("syncLast")
+  };
+
+  function setSyncStatus(msg, kind) {
+    if (!msg) { sm.status.hidden = true; sm.status.innerHTML = ""; return; }
+    sm.status.hidden = false;
+    sm.status.className = "add-status " + (kind || "info");
+    sm.status.innerHTML = msg;
+  }
+
+  function updateSyncInfo() {
+    if (!sm.last) return;
+    var last = localStorage.getItem(GH.lastSync);
+    var when = last ? new Date(Number(last)).toLocaleString() : "never";
+    sm.last.textContent = "Repository: " + (ghCfg.repo || "(not set)") +
+      " · branch " + ghCfg.branch + " · file " + ghCfg.path + " · last sync: " + when;
+  }
+
+  function readSyncForm() {
+    ghCfg.repo = (sm.repo.value || "").trim()
+      .replace(/^https?:\/\/github\.com\//i, "")
+      .replace(/\.git$/i, "")
+      .replace(/\/+$/, "");
+    ghCfg.branch = (sm.branch.value || "").trim() || "main";
+    ghCfg.path = (sm.path.value || "").trim().replace(/^\/+/, "") || "my-questions.json";
+    ghCfg.token = (sm.token.value || "").trim();
+    ghCfg.auto = !!sm.auto.checked;
+  }
+
+  function openSync() {
+    sm.repo.value = ghCfg.repo;
+    sm.branch.value = ghCfg.branch;
+    sm.path.value = ghCfg.path;
+    sm.token.value = ghCfg.token;
+    sm.auto.checked = ghCfg.auto;
+    setSyncStatus("");
+    updateSyncInfo();
+    auto.enable.checked = autoEnabled();
+    updateAutoInfo();
+    sm.overlay.hidden = false;
+    setTimeout(function () { if (!ghCfg.repo) sm.repo.focus(); else sm.token.focus(); }, 30);
+  }
+  function closeSync() { sm.overlay.hidden = true; }
+
+  sm.open.addEventListener("click", openSync);
+  sm.close.addEventListener("click", closeSync);
+  sm.overlay.addEventListener("mousedown", function (e) {
+    if (e.target === sm.overlay) closeSync();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !sm.overlay.hidden) closeSync();
+  });
+
+  sm.save.addEventListener("click", function () {
+    readSyncForm();
+    persistSync();
+    updateSyncInfo();
+    setSyncStatus("Settings saved on this device. ✅", "info");
+  });
+
+  sm.pull.addEventListener("click", function () {
+    readSyncForm();
+    persistSync();
+    setSyncStatus('<span class="spinner"></span>Downloading from GitHub…', "info");
+    ghPull().then(function (r) {
+      setSyncStatus(r.exists
+        ? "Downloaded ✅ — you now have " + r.count + " saved question(s)."
+        : "No file in the repo yet — nothing to download. Add a question and upload.", "info");
+    }).catch(function (err) {
+      setSyncStatus("⚠ " + escapeHtml(err.message || "Download failed."), "error");
+    });
+  });
+
+  sm.push.addEventListener("click", function () {
+    readSyncForm();
+    persistSync();
+    setSyncStatus('<span class="spinner"></span>Uploading to GitHub…', "info");
+    ghPush().then(function () {
+      setSyncStatus("Uploaded ✅ — your questions are now in <code>" +
+        escapeHtml(ghCfg.repo + "/" + ghCfg.path) + "</code>. Other devices get them on next load.", "info");
+    }).catch(function (err) {
+      setSyncStatus("⚠ " + escapeHtml(err.message || "Upload failed."), "error");
+    });
+  });
+
+  sm.importBtn.addEventListener("click", function () { sm.file.click(); });
+  sm.file.addEventListener("change", function () {
+    var f = sm.file.files && sm.file.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      var parsed = safeParse(text);
+      if (!parsed) {
+        var m = text.match(/\[[\s\S]*\]/);
+        parsed = m ? safeParse(m[0]) : null;
+      }
+      var list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.questions) ? parsed.questions : []);
+      list.forEach(function (r, i) {
+        if (!r.id) r.id = "u" + (r.createdAt || Date.now()).toString(36) + i;
+        if (!r.updatedAt) r.updatedAt = r.createdAt || Date.now();
+      });
+      applyMerged(mergeRecords(list));
+      renderSidebar();
+      renderQuestions();
+      setSyncStatus("Imported " + list.length + " question(s). You now have " +
+        userQuestions.length + " saved question(s).", "info");
+      ghAutoPush();
+    };
+    reader.readAsText(f);
+    sm.file.value = "";
+  });
+
+  updateSyncInfo();
+
+  /* ---------------- Auto-fetch new questions from the web ---------------- */
+  var auto = {
+    enable: document.getElementById("autoEnable"),
+    now: document.getElementById("autoNow"),
+    status: document.getElementById("autoStatus"),
+    last: document.getElementById("autoLast")
+  };
+  var autoRunning = false;
+
+  function autoEnabled() {
+    try { return (localStorage.getItem(STORE.autoEnable) || "1") === "1"; } catch (e) { return true; }
+  }
+
+  // Reuse the AI settings the user already entered in "Add a question".
+  function savedAiProvider() {
+    var provider = localStorage.getItem(STORE.provider) || IPCFG.provider || "gemini";
+    if (!PROVIDERS[provider]) provider = "gemini";
+    var base = localStorage.getItem(STORE.base) || PROVIDERS[provider].base || "";
+    var model = localStorage.getItem(STORE.model) || localStorage.getItem(STORE.geminiModel) || PROVIDERS[provider].model || "";
+    var key = localStorage.getItem(STORE.apiKey) || localStorage.getItem(STORE.geminiKey) || "";
+    return { provider: provider, base: base, model: model, key: key };
+  }
+
+  function autoPrompt() {
+    var names = BASE_TOPICS.map(function (t) { return t.name; }).join("\n");
+    return "You are an expert interview coach for Azure Data Engineer and Databricks Architect roles. " +
+      "Use web search to find CURRENT, brand-new interview questions that are NOT the standard, widely recycled classics. " +
+      "For EACH category below, give exactly ONE fresh question with a concise interview-ready answer. " +
+      "Answer bullets must each start with \"\u2022 \" (no markdown, no headers, no bold). " +
+      "Return ONLY valid JSON and nothing else, in exactly this shape: " +
+      "[ { \"category\": \"<exact category name from the list>\", \"q\": \"<question>\", \"a\": \"<answer>\", \"type\": \"concept|coding|scenario\" } ]\n\n" +
+      "Categories (use these EXACT names):\n" + names;
+  }
+
+  function parseAutoItems(text) {
+    var cleaned = String(text || "").replace(/```/g, "").replace(/^[^[]*/, "");
+    var m = cleaned.match(/\[[\s\S]*\]/);
+    var arr = null;
+    if (m) { try { arr = JSON.parse(m[0]); } catch (e) { arr = null; } }
+    if (!Array.isArray(arr)) throw new Error("The model did not return JSON. Check the AI settings/model and try again.");
+    return arr.filter(function (it) { return it && (it.q || "").trim(); });
+  }
+
+  function qExists(q) {
+    var s = String(q || "").toLowerCase();
+    if (userQuestions.some(function (u) { return String(u.q || "").toLowerCase() === s; })) return true;
+    var hit = false;
+    eachQuestion(function (t, x) { if (!hit && String(x.q || "").toLowerCase() === s) hit = true; });
+    return hit;
+  }
+
+  function collectAutoItems(items) {
+    var added = 0;
+    items.forEach(function (it) {
+      var cat = String(it.category || "").trim();
+      var target = findTopicByCategory(cat);
+      if (target) cat = target.name;
+      if (!cat) return;
+      var type = ["concept", "scenario", "coding"].indexOf(it.type) >= 0 ? it.type : "concept";
+      if (qExists(it.q)) return;
+      userQuestions.push({
+        id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        q: String(it.q).trim(),
+        a: (it.a || "").trim(),
+        code: it.code || "",
+        type: type,
+        category: cat,
+        sources: [],
+        auto: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      added++;
+    });
+    return added;
+  }
+
+  function setAutoStatus(msg, kind) {
+    if (!auto.status) return;
+    if (!msg) { auto.status.hidden = true; auto.status.innerHTML = ""; return; }
+    auto.status.hidden = false;
+    auto.status.className = "add-status " + (kind || "info");
+    auto.status.innerHTML = msg;
+  }
+
+  function updateAutoInfo() {
+    if (!auto.last) return;
+    var last = localStorage.getItem(STORE.autoLast);
+    var when = last ? new Date(Number(last)).toLocaleString() : "never";
+    auto.last.textContent = "Auto-fetch: " + (autoEnabled() ? "ON (runs once per day)" : "OFF") + " · UI last fetch: " + when;
+  }
+
+  function runAutoFetch(force) {
+    if (autoRunning) return Promise.reject(new Error("A fetch is already running — wait for it to finish."));
+    var cfg = savedAiProvider();
+    if (!cfg.key && cfg.provider !== "opencode") {
+      return Promise.reject(new Error("No AI API key found. Open ➕ Add a question → AI settings and paste a Google Gemini or OpenAI key."));
+    }
+    var last = Number(localStorage.getItem(STORE.autoLast) || 0);
+    if (!force && Date.now() - last < 86400000) {
+      return Promise.resolve({ skipped: true, added: 0 });
+    }
+    var useSearch = cfg.provider === "gemini" || cfg.provider === "openai";
+    autoRunning = true;
+    setAutoStatus('<span class="spinner"></span>Searching the web for new interview questions… this takes ~20s', "info");
+    var run = callProvider(autoPrompt(), useSearch).catch(function (err) {
+      if (useSearch && (err.status === 429 || err.status === 403 ||
+          (err.status === 400 && /tool|ground|search|web/i.test(err.message || "")))) {
+        setAutoStatus('<span class="spinner"></span>Web search unavailable — drafting from model knowledge…', "info");
+        return callProvider(autoPrompt(), false).then(function (out) { out.noSearch = true; return out; });
+      }
+      throw err;
+    });
+    return run
+      .then(function (out) {
+        if (out.noSearch) setAutoStatus('<span class="spinner"></span>Web search unavailable — drafting from model knowledge…', "info");
+        return collectAutoItems(parseAutoItems(out.text));
+      })
+      .then(function (added) {
+        save(STORE.userQuestions, userQuestions);
+        refreshMyTopic();
+        renderSidebar();
+        renderQuestions();
+        try { localStorage.setItem(STORE.autoLast, String(Date.now())); } catch (e) {}
+        updateAutoInfo();
+        if (added) ghAutoPush();
+        return { skipped: false, added: added };
+      })
+      .then(
+        function (r) { autoRunning = false; return r; },
+        function (err) { autoRunning = false; throw err; }
+      );
+  }
+
+  function maybeAutoFetch() {
+    if (!autoEnabled()) return;
+    var cfg = savedAiProvider();
+    if (!cfg.key && cfg.provider !== "opencode") return;
+    runAutoFetch(false).catch(function () {});
+  }
+
+  auto.enable.addEventListener("change", function () {
+    try { localStorage.setItem(STORE.autoEnable, auto.enable.checked ? "1" : "0"); } catch (e) {}
+    updateAutoInfo();
+  });
+  auto.now.addEventListener("click", function () {
+    auto.enable.checked = true;
+    try { localStorage.setItem(STORE.autoEnable, "1"); } catch (e) {}
+    updateAutoInfo();
+    setAutoStatus('<span class="spinner"></span>Searching the web…', "info");
+    runAutoFetch(true).then(function (r) {
+      var msg = r.skipped
+        ? "Already fetched recently. Use ⚡ Fetch now to force a fresh run."
+        : "Finished: added " + r.added + " new question(s) into their categories.";
+      setAutoStatus(msg, "info");
+      if (r.added) showSyncToast("Added " + r.added + " new question(s) to your categories");
+    }).catch(function (err) {
+      setAutoStatus("⚠ " + escapeHtml(err.message || "Auto-fetch failed."), "error");
+    });
+  });
+
+  updateAutoInfo();
 
   /* ---------------- Events ---------------- */
   el.search.addEventListener("input", function () {
@@ -1041,35 +1614,38 @@
       type: add.type.value || "concept",
       category: add.topic.value || "",
       sources: draft.sources || [],
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     };
     userQuestions.push(item);
     save(STORE.userQuestions, userQuestions);
     refreshMyTopic();
 
-    // reset form and jump to My Questions
+    // reset form and jump to the chosen category (or My Questions)
     add.q.value = "";
     add.context.value = "";
     add.answer.value = "";
     add.result.hidden = true;
-    state.topic = MY_TOPIC_ID;
+    var catTopic = findTopicByCategory(item.category);
+    state.topic = catTopic ? catTopic.id : MY_TOPIC_ID;
     state.search = "";
     el.search.value = "";
     el.clearSearch.classList.remove("show");
     renderSidebar();
     renderQuestions();
     closeModal();
-    var t = TOPICS.filter(function (x) { return x.id === MY_TOPIC_ID; })[0];
+    var t = TOPICS.filter(function (x) { return x.id === state.topic; })[0];
     var toast = document.createElement("div");
     toast.className = "crumb";
     toast.style.color = "var(--green)";
-    toast.innerHTML = "\u2705 Added to <strong>My Questions</strong> \u2014 now " +
+    toast.innerHTML = "\u2705 Added to <strong>" + escapeHtml(catTopic ? catTopic.name : "My Questions") + "</strong> \u2014 now " +
       (t ? t.questions.length : userQuestions.length) + " question(s).";
     el.crumb.parentNode.insertBefore(toast, el.questions);
     setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3500);
+    ghAutoPush();
   });
 
-  // Export user questions as a data file they can drop into data/.
+  // Export user questions as a data file (drop it next to index.html).
   add.exportMine.addEventListener("click", function () {
     if (!userQuestions.length) { alert("You haven't added any questions yet."); return; }
     var clean = userQuestions.map(function (u) {
@@ -1093,9 +1669,17 @@
 
   /* ---------------- Boot ---------------- */
   if (!TOPICS.length) {
-    el.questions.innerHTML = '<div class="empty">No question data loaded. Ensure the data/*.js files are present.</div>';
+    el.questions.innerHTML = '<div class="empty">No question data loaded. Ensure the question .js files are next to index.html.</div>';
   } else {
     renderSidebar();
     renderQuestions();
   }
+
+  // Bring in questions saved by other devices / in the repo, silently (offline is fine).
+  if (ghCfg.repo) {
+    ghPull().catch(function () {});
+  }
+
+  // Auto-fetch new questions from the web (at most once per day, if enabled + a key exists).
+  setTimeout(maybeAutoFetch, 1500);
 })();
