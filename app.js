@@ -4,11 +4,35 @@
   var MY_TOPIC_ID = "my-questions";
 
   // Build the merged topic list; the "My Questions" topic is injected dynamically.
-  var BASE_TOPICS = (window.QB || []).slice();
+  // Primary source is the consolidated hierarchy DB (categories > topics > questions).
+  // Falls back to flat window.QB topic bundles for backwards compatibility.
+  var DB = (window.INTERVIEW_DB && Array.isArray(window.INTERVIEW_DB.categories))
+    ? window.INTERVIEW_DB : null;
+  var CATEGORIES = [];          // [{id, name, description, topicIds:[...]}]
+  var BASE_TOPICS = [];
+  (function buildFromDb() {
+    if (!DB) {
+      BASE_TOPICS = (window.QB || []).slice();
+      return;
+    }
+    var byId = {};
+    DB.categories.forEach(function (cat) {
+      var catTopicIds = [];
+      (cat.topics || []).forEach(function (t) {
+        if (!byId[t.id]) {
+          byId[t.id] = { id: t.id, name: t.name, icon: t.icon, roles: t.roles || [], questions: t.questions || [] };
+          BASE_TOPICS.push(byId[t.id]);
+        }
+        catTopicIds.push(t.id);
+      });
+      CATEGORIES.push({ id: cat.id, name: cat.name, description: cat.description || "", topicIds: catTopicIds });
+    });
+  })();
   var TOPICS = BASE_TOPICS.slice();
 
   var state = {
     role: "all",
+    category: "all",
     topic: "all",
     search: "",
     openAnswers: {}
@@ -136,6 +160,8 @@
     search: document.getElementById("search"),
     clearSearch: document.getElementById("clearSearch"),
     roleFilter: document.getElementById("roleFilter"),
+    catBar: document.getElementById("catBar"),
+    sideHeadLabel: document.getElementById("sideHeadLabel"),
     resultCount: document.getElementById("resultCount"),
     empty: document.getElementById("empty"),
     progressFill: document.getElementById("progressFill"),
@@ -179,13 +205,30 @@
 
   function roleTotalQuestions() {
     var n = 0;
-    TOPICS.forEach(function (t) { if (matchesRole(t)) n += topicTotal(t); });
+    TOPICS.forEach(function (t) { if (visible(t)) n += topicTotal(t); });
     return n;
   }
 
   function matchesRole(topic) {
     if (state.role === "all") return true;
     return (topic.roles || []).indexOf(state.role) !== -1;
+  }
+
+  // topic id -> list of category ids it belongs to (built from the DB hierarchy).
+  var TOPIC_CATEGORIES = {};
+  CATEGORIES.forEach(function (cat) {
+    cat.topicIds.forEach(function (tid) {
+      (TOPIC_CATEGORIES[tid] = TOPIC_CATEGORIES[tid] || []).push(cat.id);
+    });
+  });
+
+  function matchesCategory(topic) {
+    if (state.category === "all") return true;
+    return (TOPIC_CATEGORIES[topic.id] || []).indexOf(state.category) !== -1;
+  }
+
+  function visible(topic) {
+    return matchesRole(topic) && matchesCategory(topic);
   }
 
   function matchesSearch(q) {
@@ -195,6 +238,41 @@
     if (q.a && q.a.toLowerCase().indexOf(s) !== -1) return true;
     if (q.code && q.code.toLowerCase().indexOf(s) !== -1) return true;
     return false;
+  }
+
+  /* ---------------- Categories ---------------- */
+  function renderCategories() {
+    if (!el.catBar) return;
+    el.catBar.innerHTML = "";
+    if (!CATEGORIES.length) { el.catBar.style.display = "none"; return; }
+    el.catBar.style.display = "";
+
+    var allBtn = document.createElement("button");
+    allBtn.className = "cat-chip" + (state.category === "all" ? " active" : "");
+    allBtn.textContent = "All categories";
+    allBtn.addEventListener("click", function () { selectCategory("all"); });
+    el.catBar.appendChild(allBtn);
+
+    CATEGORIES.forEach(function (cat) {
+      var btn = document.createElement("button");
+      btn.className = "cat-chip" + (state.category === cat.id ? " active" : "");
+      btn.textContent = cat.name;
+      if (cat.description) btn.title = cat.description;
+      btn.addEventListener("click", function () { selectCategory(cat.id); });
+      el.catBar.appendChild(btn);
+    });
+  }
+
+  function selectCategory(id) {
+    state.category = id;
+    state.topic = "all";
+    if (el.sideHeadLabel) {
+      var cat = CATEGORIES.filter(function (c) { return c.id === id; })[0];
+      el.sideHeadLabel.textContent = cat ? cat.name + " — Topics" : "Topics";
+    }
+    renderCategories();
+    renderSidebar();
+    renderQuestions();
   }
 
   /* ---------------- Sidebar ---------------- */
@@ -213,7 +291,7 @@
     el.topicNav.appendChild(allBtn);
 
     TOPICS.forEach(function (topic) {
-      if (!matchesRole(topic)) return;
+      if (!visible(topic)) return;
       var count = topicTotal(topic);
       var done = 0;
       (topic.questions || []).forEach(function (q, idx) {
@@ -246,7 +324,7 @@
     var frag = document.createDocumentFragment();
 
     TOPICS.forEach(function (topic) {
-      if (!matchesRole(topic)) return;
+      if (!visible(topic)) return;
       if (state.topic !== "all" && state.topic !== topic.id) return;
 
       (topic.questions || []).forEach(function (q, idx) {
@@ -460,7 +538,7 @@
   function updateProgress() {
     var total = 0, done = 0;
     eachQuestion(function (topic, q, idx) {
-      if (!matchesRole(topic)) return;
+      if (!visible(topic)) return;
       total++;
       if (confident[qKey(topic, q, idx)]) done++;
     });
@@ -1106,7 +1184,7 @@
     });
     if (state.topic !== "all") {
       var t = TOPICS.filter(function (x) { return x.id === state.topic; })[0];
-      if (t && !matchesRole(t)) state.topic = "all";
+      if (t && !visible(t)) state.topic = "all";
     }
     renderSidebar();
     renderQuestions();
@@ -1667,10 +1745,74 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   });
 
+  /* ---------------- Public API for the document importer ---------------- */
+  function normQuestion(s) {
+    return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  function knownQuestionSet() {
+    var set = {};
+    BASE_TOPICS.forEach(function (t) {
+      (t.questions || []).forEach(function (q) { var n = normQuestion(q.q); if (n) set[n] = true; });
+    });
+    userQuestions.forEach(function (u) { var n = normQuestion(u.q); if (n) set[n] = true; });
+    return set;
+  }
+  function topicNameForId(tid) {
+    var found = "";
+    BASE_TOPICS.forEach(function (t) {
+      var cats = TOPIC_CATEGORIES[t.id] || [];
+      if (t.id === tid && !found) found = t.name;
+    });
+    return found;
+  }
+  window.IPApp = {
+    topicNames: function () {
+      return BASE_TOPICS.map(function (t) { return t.name; });
+    },
+    topicNameForId: topicNameForId,
+    knownCount: function () { return Object.keys(knownQuestionSet()).length; },
+    // items: [{ q, a, type, category }] -> { added, skipped, byTopic }
+    addImported: function (items) {
+      var known = knownQuestionSet();
+      var added = 0, skipped = 0, byTopic = {};
+      (items || []).forEach(function (it) {
+        var q = String(it.q || "").trim();
+        var nq = normQuestion(q);
+        if (!q || !nq || known[nq]) { skipped++; return; }
+        known[nq] = true;
+        var item = {
+          id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          q: q,
+          a: it.a || "",
+          code: it.code || "",
+          type: it.type || "concept",
+          category: it.category || "",
+          sources: it.sources || [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        userQuestions.push(item);
+        added++;
+        var key = item.category || "My Questions";
+        byTopic[key] = (byTopic[key] || 0) + 1;
+      });
+      if (added) {
+        save(STORE.userQuestions, userQuestions);
+        refreshMyTopic();
+        renderCategories();
+        renderSidebar();
+        renderQuestions();
+        ghAutoPush();
+      }
+      return { added: added, skipped: skipped, byTopic: byTopic };
+    }
+  };
+
   /* ---------------- Boot ---------------- */
   if (!TOPICS.length) {
     el.questions.innerHTML = '<div class="empty">No question data loaded. Ensure the question .js files are next to index.html.</div>';
   } else {
+    renderCategories();
     renderSidebar();
     renderQuestions();
   }

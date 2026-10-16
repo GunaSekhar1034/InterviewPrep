@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -8,13 +8,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Interview Prep" />
 <meta name="theme-color" content="#0f172a" />
-<title>Interview Prep — Azure Data Engineer & Databricks Architect</title>
+<title>Interview Prep ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Azure Data Engineer & Databricks Architect</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <header class="topbar">
   <div class="brand">
-    <span class="logo">◆</span>
+    <span class="logo">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â </span>
     <div>
       <h1>Interview Prep</h1>
       <p class="sub">Azure Data Engineer &amp; Databricks Architect</p>
@@ -23,8 +23,8 @@
 
   <div class="controls">
     <div class="search-wrap">
-      <input id="search" type="text" placeholder="Search questions or answers…" autocomplete="off" />
-      <button id="clearSearch" class="clear-btn" title="Clear" aria-label="Clear search">×</button>
+      <input id="search" type="text" placeholder="Search questions or answersÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦" autocomplete="off" />
+      <button id="clearSearch" class="clear-btn" title="Clear" aria-label="Clear search">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â</button>
     </div>
     <div class="role-filter" id="roleFilter">
       <button class="role-btn active" data-role="all">All roles</button>
@@ -32,6 +32,8 @@
       <button class="role-btn" data-role="architect">Architect</button>
     </div>
   </div>
+
+  <div class="cat-bar" id="catBar" aria-label="Categories"></div>
 
   <div class="progress-wrap">
     <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
@@ -43,16 +45,17 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="side-head">
-      <span>Topics</span>
+      <span id="sideHeadLabel">Topics</span>
       <span id="topicTotal" class="pill"></span>
     </div>
     <nav id="topicNav" class="topic-nav"></nav>
     <div class="side-tools">
-      <button id="addOpen" class="tool-btn add-tool">➕ Add a question</button>
-      <button id="syncOpen" class="tool-btn">☁ Sync to GitHub</button>
+      <button id="ÃƒÂ¢Ã…Â¾Ã¢â‚¬Â¢ Add a question</button>
+      <button id="importOpen" class="tool-btn">Import documents</button>
+      <button id="syncOpen" clÃƒÂ¢Ã‹Å“Ã‚Â Sync to GitHub</button>
       <button id="expandAll" class="tool-btn">Show all answers</button>
       <button id="collapseAll" class="tool-btn">Hide all answers</button>
-      <button id="exportMine" class="tool-btn">⬇ Export my questions</button>
+      <button id="exportMine" clÃƒÂ¢Ã‚Â¬Ã¢â‚¬Â¡ Export my questions</button>
     </div>
   </aside>
 
@@ -65,23 +68,23 @@
 
 <footer class="footer">
   <span id="resultCount"></span>
-  <span class="voice-hint">Tip: use the mic to dictate your spoken answer, 🔊 to hear the question read aloud. Questions sync through your GitHub repo; notes &amp; progress stay in this browser.</span>
+  <spÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…Â  to hear the question read aloud. Questions sync through your GitHub repo; notes &amp; progress stay in this browser.</span>
 </footer>
 
 <!-- Add-a-question modal -->
 <div id="addModal" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-label="Add a question">
+  <div clÃƒÂ¢Ã…Â¾Ã¢â‚¬Â¢ Add a question">
     <div class="modal-head">
-      <h2>➕ Add a question</h2>
-      <button id="addClose" class="modal-close" aria-label="Close">×</button>
+            <h2>Ã¢Å¾â€¢ Add a question</h2>
+      <button id="addClose" class="modal-close" aria-label="Close">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â</button>
     </div>
 
     <div class="modal-body">
       <label class="field">
         <span class="field-label">Your question <em class="req">*</em></span>
         <div class="q-input-row">
-          <textarea id="addQ" class="add-input" rows="2" placeholder="Type or dictate the interview question you want answered…"></textarea>
-          <button id="addMic" class="btn icon" title="Dictate question">🎤</button>
+          <textarea id="addQ" class="add-input" rows="2" placeholder="Type or dictate the interview question you want answeredÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"></textarea>
+          <button id="ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¤">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤</button>
         </div>
       </label>
 
@@ -102,23 +105,23 @@
 
       <label class="field">
         <span class="field-label">Extra context (optional)</span>
-        <textarea id="addContext" class="add-input" rows="2" placeholder="e.g. focus on performance tuning; mention specific tools; keep it SHORT…"></textarea>
+        <textarea id="addContext" class="add-input" rows="2" placeholder="e.g. focus on performance tuning; mention specific tools; keep it SHORTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"></textarea>
       </label>
 
       <details class="ai-settings">
-        <summary>AI settings — needed for live web search</summary>
+        <summary>AI settings ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â needed for live web search</summary>
         <div class="ai-grid">
           <label class="field">
             <span class="field-label">Provider</span>
             <select id="addProvider" class="add-select">
-              <option value="gemini">Google Gemini — web search</option>
-              <option value="openai">OpenAI Responses — web search</option>
-              <option value="openai-compat">OpenAI-compatible chat — no web</option>
-              <option value="opencode">OpenCode server — local, run "opencode serve"</option>
+              <option value="gemini">Google Gemini ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â web search</option>
+              <option value="openai">OpenAI Responses ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â web search</option>
+              <option value="openai-compat">OpenAI-compatible chat ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â no web</option>
+              <option value="opencode">OpenCode server ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â local, run "opencode serve"</option>
             </select>
           </label>
           <label class="field">
-            <span class="field-label">Model name — type any</span>
+            <span class="field-label">Model name ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â type any</span>
             <input id="addModel" class="add-select" list="modelList" placeholder="e.g. gemini-2.5-flash, gpt-5.5, big-pickle" autocomplete="off" />
             <datalist id="modelList"></datalist>
           </label>
@@ -135,7 +138,7 @@
           <strong>Gemini</strong> (key at
           <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>)
           and <strong>OpenAI</strong> (<code>gpt-5.5</code> etc.) do live web search.
-          <strong>OpenAI-compatible</strong> works with any base URL — e.g. opencode zen
+          <strong>OpenAI-compatible</strong> works with any base URL ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â e.g. opencode zen
           (<code>https://opencode.ai/zen/v1</code>, models like <code>big-pickle</code>, <code>glm-5</code>, <code>kimi-k2</code>),
           Groq, OpenRouter, or a local server. Everything is stored only in this browser.
           <br /><strong>OpenCode server</strong> talks to a local headless <code>opencode serve</code> at
@@ -147,19 +150,19 @@
       </details>
 
       <div class="modal-actions">
-        <button id="addSearch" class="btn primary">🔎 Search web &amp; draft answer</button>
-        <button id="addManual" class="btn">✎ Add manually</button>
+        <button id="ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ…Â½ Search web & draft answer</button>
+        <button id="ÃƒÂ¢Ã…â€œÃ…Â½ Add manually</button>
       </div>
 
       <div id="addStatus" class="add-status" hidden></div>
 
       <div id="addResult" class="add-result" hidden>
-        <div class="field-label">Draft answer — edit before saving if you like</div>
+        <div class="field-label">Draft answer ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â edit before saving if you like</div>
         <textarea id="addAnswer" class="add-input answer-input" rows="10"></textarea>
         <div id="addSources" class="sources"></div>
         <div class="modal-actions">
-          <button id="addSave" class="btn primary">➕ Add to my list</button>
-          <button id="addRegen" class="btn">↻ Regenerate</button>
+          <button id="ÃƒÂ¢Ã…Â¾Ã¢â‚¬Â¢ Add to my list</button>
+          <button id="ÃƒÂ¢Ã¢â‚¬Â Ã‚Â» Regenerate</button>
         </div>
       </div>
     </div>
@@ -170,14 +173,14 @@
 <div id="syncModal" class="modal-overlay" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-label="Sync questions to GitHub">
     <div class="modal-head">
-      <h2>☁ Sync questions to GitHub</h2>
-      <button id="syncClose" class="modal-close" aria-label="Close">×</button>
+            <h2>Ã¢ËœÂ Sync questions to GitHub</h2>
+      <button id="syncClose" class="modal-close" aria-label="Close">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â</button>
     </div>
 
     <div class="modal-body">
       <p class="hint">
         Questions you add are saved to a file in your GitHub repository so they show up on every
-        device (iPhone, laptop, …). <strong>Downloading is automatic</strong> on load — it needs no
+        device (iPhone, laptop, ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦). <strong>Downloading is automatic</strong> on load ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â it needs no
         token. <strong>Uploading</strong> needs a GitHub token with write access to this one repo.
       </p>
 
@@ -199,7 +202,7 @@
         </label>
         <label class="field">
           <span class="field-label">GitHub token (Contents: read &amp; write)</span>
-          <input id="syncToken" type="password" class="add-select" placeholder="github_pat_…" autocomplete="off" />
+          <input id="syncToken" type="password" class="add-select" placeholder="github_pat_..." autocomplete="off" />
         </label>
       </div>
 
@@ -212,15 +215,15 @@
         Create a <strong>fine-grained token</strong> at
         <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>:
         set <em>Repository access</em> to only <code>InterviewPrep</code>, and
-        <em>Permissions → Repository permissions → Contents</em> to <strong>Read and write</strong>.
+        <em>Permissions ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ Repository permissions ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ Contents</em> to <strong>Read and write</strong>.
         The token is stored only in this browser.
       </p>
 
       <div class="modal-actions">
-        <button id="syncSave" class="btn">💾 Save settings</button>
-        <button id="syncPull" class="btn">⬇ Download from repo</button>
-        <button id="syncPush" class="btn primary">⬆ Upload to repo</button>
-        <button id="syncImport" class="btn">📥 Import file</button>
+        <button id="syncSÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¾ Save settings</button>
+        <button id="syncPull" clÃƒÂ¢Ã‚Â¬Ã¢â‚¬Â¡ Download from repo</button>
+        <button id="syncPush" clÃƒÂ¢Ã‚Â¬Ã¢â‚¬Â  Upload to repo</button>
+        <button id="syncImport" clÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â¥ Import file</button>
       </div>
 
       <div id="syncStatus" class="add-status" hidden></div>
@@ -228,20 +231,20 @@
       <input id="syncFile" type="file" accept="application/json,.json,.js" hidden />
 
       <details class="ai-settings">
-        <summary>🔎 Auto-fetch new interview questions from the web (daily)</summary>
+        <summary>ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ Auto-fetch new interview questions from the web (daily)</summary>
         <p class="hint">
           When you open the app, if it hasn't already fetched today, it searches the internet and
           adds brand-new questions into the matching category (Azure Data Factory, Spark, Delta Lake,
-          …). It uses the <strong>AI settings</strong> from "➕ Add a question" — live web search
+          ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦). It uses the <strong>AI settings</strong> from "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Add a question" ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â live web search
           works with Google Gemini or OpenAI (paste an API key there). Each new question is also
           uploaded to your GitHub file so every device gets it.
         </p>
         <label class="checkbox-line">
           <input id="autoEnable" type="checkbox" checked />
-          <span>Fetch new questions automatically (once per day)</span>
+          <spÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡ Fetch new questions now automatically (once per day)</span>
         </label>
         <div class="modal-actions">
-          <button id="autoNow" class="btn primary">⚡ Fetch new questions now</button>
+          <button id="ÃƒÂ¢Ã…Â¡Ã‚Â¡ Fetch new questions now</button>
         </div>
         <div id="autoStatus" class="add-status" hidden></div>
         <p id="autoLast" class="hint"></p>
@@ -250,20 +253,23 @@
   </div>
 </div>
 
-<script src="adf.js"></script>
-<script src="spark.js"></script>
-<script src="delta.js"></script>
-<script src="pyspark.js"></script>
-<script src="sql.js"></script>
-<script src="modeling.js"></script>
-<script src="streaming.js"></script>
-<script src="governance.js"></script>
-<script src="architecture.js"></script>
-<script src="architect.js"></script>
-<script src="cicd-fabric.js"></script>
-<script src="scenario.js"></script>
-<script src="behavioral.js"></script>
+<script src="data/interview-db.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="importer.js"></script>
+<!-- ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ Import documents modal -->
+<div id="importModal" class="modal-overlay" hidden>
+  <div clÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã¢â‚¬Å¾ Import documents">
+      <h2>Import documents</h2>
+    <div class="modal-body">
+      <p class="hint">Upload PDF, DOCX, TXT, MD, CSV, XLSX, or images. Extracts Q&A, dedupes, classifies, and saves to your local "My Questions".</p>
+      <label class="field"><span class="field-label">Select files</span><input id="importFile" type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.json,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.bmp,.tiff" /></label>
+      <div class="modal-actions"><button id="importProcess" class="btn primary">Extract &amp; import</button></div>
+      <div id="importStatus" class="add-status" hidden></div>
+      <div id="importCount" class="hint"></div>
+      <div id="importResult" class="sources" hidden></div>
+      <p class="hint">For PDFs, docx, xlsx, images, it loads libraries from CDN (needs internet). TXT/CSV/MD work offline.</p>
+    </div></div></div>
+
 </body>
 </html>

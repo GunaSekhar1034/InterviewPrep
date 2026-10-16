@@ -1,0 +1,66 @@
+{
+  "categories": [
+    {
+      "id": "ade",
+      "name": "Azure Data Engineer",
+      "description": "Azure Data Engineering interview preparation",
+      "topics": [
+        {"id": "adf", "name": "Azure Data Factory (ADF)"},
+        {"id": "azure", "name": "Azure Services"},
+        {"id": "cicd-fabric", "name": "CI/CD, Orchestration & Microsoft Fabric"},
+        {"id": "delta", "name": "Delta Lake"},
+        {"id": "governance", "name": "Unity Catalog, Governance & Security"},
+        {"id": "modeling", "name": "Data Modeling & SCD"},
+        {"id": "pyspark", "name": "PySpark & Python"},
+        {"id": "scenario", "name": "Scenario-Based & Troubleshooting"},
+        {"id": "spark", "name": "Apache Spark & Databricks Fundamentals"},
+        {"id": "sql", "name": "SQL & Query Optimization"},
+        {"id": "streaming", "name": "Streaming & Ingestion"},
+        {"id": "architecture", "name": "Medallion Architecture & Data Platform Design"},
+        {"id": "behavioral", "name": "Behavioral, Project & HR"}
+      ]
+    },
+    {
+      "id": "databricks-architect",
+      "name": "Databricks Architect",
+      "description": "Databricks Architect interview preparation",
+      "topics": [
+        {"id": "architect", "name": "Databricks Architect Design & Consulting"},
+        {"id": "spark", "name": "Apache Spark & Databricks Fundamentals"},
+        {"id": "delta", "name": "Delta Lake"},
+        {"id": "governance", "name": "Unity Catalog & Security"},
+        {"id": "architecture", "name": "Architecture & Platform Design"},
+        {"id": "scenario", "name": "Scenario-Based Questions"},
+        {"id": "modeling", "name": "Data Modeling"}
+      ]
+    },
+    {
+      "id": "data-architect",
+      "name": "Data Architect",
+      "description": "Data Architect interview preparation",
+      "topics": [
+        {"id": "architecture", "name": "Data Architecture & Design"},
+        {"id": "modeling", "name": "Data Modeling & SCD"},
+        {"id": "governance", "name": "Data Governance & Security"},
+        {"id": "sql", "name": "SQL & Database Design"},
+        {"id": "delta", "name": "Delta Lake"},
+        {"id": "spark", "name": "Spark Fundamentals"}
+      ]
+    },
+    {
+      "id": "ai-data-engineer",
+      "name": "AI Data Engineer",
+      "description": "AI Data Engineering interview preparation",
+      "topics": [
+        {"id": "pyspark", "name": "PySpark & Python"},
+        {"id": "delta", "name": "Delta Lake"},
+        {"id": "streaming", "name": "Streaming & Real-time Data"},
+        {"id": "architecture", "name": "Data Architecture for AI"},
+        {"id": "scenario", "name": "Scenario-Based Questions"},
+        {"id": "sql", "name": "SQL & Query Optimization"},
+        {"id": "cicd-fabric", "name": "CI/CD & ML Ops"},
+        {"id": "modeling", "name": "Data Modeling"}
+      ]
+    }
+  ]
+}
