@@ -47,32 +47,94 @@
 
   function norm(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
   function clean(s) { return String(s || "").replace(/\s+/g, " ").trim(); }
-  function toBullets(a) {
-    a = clean(a);
-    if (!a) return "";
-    if (/^\s*[\u2022\-\*]/m.test(a)) return a;
-    var segmented = a.replace(/([.;])\s+(?=[A-Z0-9])/g, "$1\n");
-    var parts = segmented.split("\n").map(function (p) { return p.trim().replace(/\.$/, ""); }).filter(function (p) { return p.length > 4; });
-    if (parts.length <= 1) return a;
-    return parts.slice(0, 12).map(function (p) { return "\u2022 " + p; }).join("\n");
+
+  // Drop document noise: page numbers, headers/footers, watermarks, rule lines.
+  function stripNoise(text) {
+    var lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (!t) { out.push(""); continue; }
+      if (/^(?:page\s*)?\d{1,3}(?:\s*(?:of|\/|-)\s*\d{1,3})?$/i.test(t)) continue;
+      if (/^page\s+\d+/i.test(t)) continue;
+      if (/^(?:confidential|internal use only|do not distribute|copyright|\u00a9)\b/i.test(t)) continue;
+      if (/^[\-=_~\u2022\u00b7.\s]{3,}$/.test(t)) continue;
+      out.push(lines[i]);
+    }
+    return out.join("\n");
   }
-  function anyQre() { return /^\s*(?:Q\s*\d*\s*[.):\-]|Q\s*[:.]|Question\s*\d*\s*[:.\-)]|\d{1,3}\s*[.):])\s*(.+)$/i; }
+
+  function isQuestionText(t) {
+    t = clean(t).replace(/^[\u2022\-\*\s]+/, "");
+    if (t.length < 12 || t.length > 300) return false;
+    if (/\?$/.test(t)) return true;
+    return /^(what|why|how|when|where|which|who|whom|whose|explain|describe|define|difference|compare|list|can you|could you|would you|tell me|walk me|is |are |do |does |did |should |scenario|suppose|imagine)\b/i.test(t);
+  }
+
+  function toBullets(a) {
+    a = String(a || "").replace(/\r\n?/g, "\n");
+    a = a.replace(/^\s*(?:answer|ans|response|a)\s*[:\-]\s*/i, "");
+    var lines = a.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+    var pieces = [];
+    lines.forEach(function (line) {
+      line = line.replace(/^[\u2022\-\*]\s*/, "");
+      var seg = line.replace(/([.;])\s+(?=[A-Z0-9])/g, "$1\n");
+      seg.split("\n").forEach(function (s) {
+        s = s.trim().replace(/[:;]$/, "").trim();
+        if (s.length > 4) pieces.push(s);
+      });
+    });
+    pieces = pieces.filter(function (p, idx) { return pieces.indexOf(p) === idx; });
+    if (pieces.length <= 1) return clean(pieces.join(" ") || a);
+    return pieces.slice(0, 12).map(function (p) { return "\u2022 " + p; }).join("\n");
+  }
+
+  // Split a question that has its answer appended on the same line
+  // e.g. "What is X? Because Y." -> { q: "What is X?", a: "Because Y." }
+  function splitQuestionInline(text) {
+    var t = String(text || "").trim();
+    var idx = t.indexOf("?");
+    if (idx !== -1 && idx < t.length - 1) {
+      var rest = t.slice(idx + 1).trim();
+      if (rest) return { q: t.slice(0, idx + 1).trim(), a: rest };
+    }
+    return { q: t, a: "" };
+  }
+
   function parseQA(text) {
-    var lines = String(text || "").split(/\r?\n/);
+    var lines = stripNoise(text).split("\n");
     var pairs = [], curQ = null, curA = [];
-    function flush() { if (curQ) { pairs.push({ q: clean(curQ), a: clean(curA.join(" ")) }); } curQ = null; curA = []; }
-    var anyQ = anyQre();
+    function flush() {
+      if (curQ) {
+        var a = toBullets(curA.join("\n"));
+        if (clean(curQ).length >= 12 && a.length >= 15) pairs.push({ q: clean(curQ), a: a });
+      }
+      curQ = null; curA = [];
+    }
+    var explicit = /^\s*(?:Q(?:uestion)?\s*#?\s*\d*\s*[.):\-]|Q\s*[:.])\s*(.+)$/i;
+    var numbered = /^\s*\d{1,3}\s*[.)]\s+(.+)$/;
     for (var i = 0; i < lines.length; i++) {
       var ln = lines[i];
       if (!ln.trim()) { if (curA.length) curA.push(""); continue; }
-      var m = anyQ.exec(ln);
-      var isQ = false, qtext = "";
-      if (m && m[1].length > 12) { isQ = true; qtext = m[1]; }
-      else if (ln.trim().endsWith("?") && ln.trim().length > 12 && ln.trim().length < 300) { isQ = true; qtext = ln.trim(); }
-      if (isQ) { flush(); curQ = qtext; } else if (curQ !== null) { curA.push(ln.trim()); }
+      var t = ln.trim();
+      var em = explicit.exec(ln);
+      if (em) {
+        var s1 = splitQuestionInline(em[1]);
+        if (clean(s1.q).length >= 12) { flush(); curQ = s1.q; if (s1.a) curA.push(s1.a); continue; }
+      }
+      var nm = numbered.exec(ln);
+      if (nm) {
+        var s2 = splitQuestionInline(nm[1]);
+        if (isQuestionText(s2.q)) { flush(); curQ = s2.q; if (s2.a) curA.push(s2.a); continue; }
+      }
+      if (isQuestionText(t)) {
+        var s3 = /\?/.test(t) ? splitQuestionInline(t) : { q: t, a: "" };
+        if (isQuestionText(s3.q)) { flush(); curQ = s3.q; if (s3.a) curA.push(s3.a); continue; }
+      }
+      if (curQ !== null) curA.push(t);
     }
     flush();
-    return pairs.filter(function (p) { return p.q.length >= 12; });
+    return pairs;
   }
   function classify(q, a) {
     var blob = norm(q + " " + a);
@@ -125,17 +187,23 @@
       function finish() {        if (items.length === 0) { setStat("No Q&A extracted from files (check file types and content).", "error"); if (countOut) countOut.textContent = "0 pairs ready"; return; }
         if (countOut) countOut.textContent = items.length + " pairs ready";
         setStat("Reviewing for duplicates and classifying...", "");
-        // classify + add
+        // classify + add (drop empty/short pairs and de-dupe within the batch)
         var classified = [];
+        var seenBatch = {};
         var db = (window.INTERVIEW_DB && window.INTERVIEW_DB.categories) ? window.INTERVIEW_DB : null;
         var idToName = {};
         if (db) { db.categories.forEach(function (c) { (c.topics || []).forEach(function (t) { if (!idToName[t.id]) idToName[t.id] = t.name; }); }); }
         for (var k = 0; k < items.length; k++) {
           var p = items[k];
+          if (!p || !p.q || !p.a) continue;
+          var pkey = norm(p.q);
+          if (!pkey || seenBatch[pkey]) continue;
+          seenBatch[pkey] = 1;
           var cl = classify(p.q, p.a);
           var tname = (cl.topic && (idToName[cl.topic] || TOPIC_NAMES[cl.topic])) || "My Questions";
-          classified.push({ q: p.q, a: p.a, type: cl.topic === "scenario" ? "scenario" : "concept", category: tname });
+          classified.push({ q: clean(p.q), a: p.a, type: cl.topic === "scenario" ? "scenario" : "concept", category: tname });
         }
+        if (classified.length === 0) { setStat("No usable Q&A found after cleaning (try clearer documents).", "error"); if (countOut) countOut.textContent = "0 pairs ready"; return; }
         var res = window.IPApp.addImported(classified);
         setStat("Done. Added " + res.added + ", skipped " + res.skipped + ".", "info");
         if (result && res.byTopic) { result.textContent = Object.keys(res.byTopic).map(function (x) { return x + ": +" + res.byTopic[x]; }).join(" | "); result.hidden = false; }
@@ -207,11 +275,16 @@
         var ws = wb.Sheets[wb.SheetNames[s]];
         var rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
         for (var i = 0; i < rows.length; i++) {
-          var r = rows[i].filter(function (x) { return String(x).trim() !== ""; });
-          if (r.length) txt.push(r.join(" | "));
+          var cells = rows[i].map(function (x) { return String(x).trim(); }).filter(function (x) { return x !== ""; });
+          if (!cells.length) continue;
+          if (cells.length >= 2 && isQuestionText(cells[0])) {
+            items.push({ q: clean(cells[0]), a: toBullets(cells.slice(1).join("\n")) });
+          } else {
+            txt.push(cells.join(" | "));
+          }
         }
       }
-      items.push.apply(items, parseQA(txt.join("\n")));
+      if (txt.length) items.push.apply(items, parseQA(txt.join("\n")));
       done();
     } catch (e) { done(); }
   }

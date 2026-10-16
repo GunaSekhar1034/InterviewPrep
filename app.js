@@ -166,9 +166,7 @@
     empty: document.getElementById("empty"),
     progressFill: document.getElementById("progressFill"),
     progressText: document.getElementById("progressText"),
-    resetProgress: document.getElementById("resetProgress"),
-    expandAll: document.getElementById("expandAll"),
-    collapseAll: document.getElementById("collapseAll")
+    resetProgress: document.getElementById("resetProgress")
   };
 
   function eachQuestion(cb) {
@@ -1198,27 +1196,6 @@
     renderQuestions();
   });
 
-  el.expandAll.addEventListener("click", function () {
-    document.querySelectorAll(".card").forEach(function (card, i) {
-      var key = card.dataset.key;
-      state.openAnswers[key] = true;
-      var ans = card.querySelector(".answer");
-      var rb = card.querySelector(".btn.reveal");
-      if (ans) ans.style.display = "block";
-      if (rb) rb.textContent = "\u25B2 Hide answer";
-    });
-  });
-  el.collapseAll.addEventListener("click", function () {
-    document.querySelectorAll(".card").forEach(function (card) {
-      var key = card.dataset.key;
-      state.openAnswers[key] = false;
-      var ans = card.querySelector(".answer");
-      var rb = card.querySelector(".btn.reveal");
-      if (ans) ans.style.display = "none";
-      if (rb) rb.textContent = "\u25BC Show answer";
-    });
-  });
-
   el.resetProgress.addEventListener("click", function () {
     if (!confirm("Reset all progress and notes? This cannot be undone.")) return;
     confident = {};
@@ -1253,8 +1230,7 @@
     answer: document.getElementById("addAnswer"),
     sources: document.getElementById("addSources"),
     save: document.getElementById("addSave"),
-    regen: document.getElementById("addRegen"),
-    exportMine: document.getElementById("exportMine")
+    regen: document.getElementById("addRegen")
   };
 
   var draft = { q: "", context: "", sources: [], text: "" };
@@ -1732,28 +1708,6 @@
     el.crumb.parentNode.insertBefore(toast, el.questions);
     setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3500);
     ghAutoPush();
-  });
-
-  // Export user questions as a data file (drop it next to index.html).
-  add.exportMine.addEventListener("click", function () {
-    if (!userQuestions.length) { alert("You haven't added any questions yet."); return; }
-    var clean = userQuestions.map(function (u) {
-      var o = { q: u.q, a: u.a };
-      if (u.type && u.type !== "concept") o.type = u.type;
-      if (u.code) o.code = u.code;
-      if (u.sources && u.sources.length) o.sources = u.sources;
-      return o;
-    });
-    var topic = { id: "my-questions", name: "My Questions", icon: "\u2B50", roles: ["ade", "architect"], questions: clean };
-    var js = "window.QB = window.QB || [];\nQB.push(" + JSON.stringify(topic, null, 2) + ");\n";
-    var blob = new Blob([js], { type: "text/javascript" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "my-questions.js";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   });
 
   /* ---------------- Public API for the document importer ---------------- */
