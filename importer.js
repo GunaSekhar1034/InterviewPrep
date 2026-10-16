@@ -19,7 +19,8 @@
     "governance": ["unity catalog", "governance", "access control", "rbac", "acl", "mask", "row filter", "lineage", "audit", "security"],
     "architecture": ["architecture", "medallion", "bronze", "silver", "gold", "data lake", "lakehouse", "design", "warehouse"],
     "architect": ["architect", "design", "scalability", "best practice", "migration", "capacity", "consulting"],
-    "cicd-fabric": ["ci/cd", "cicd", "azure devops", "github actions", "fabric", "deploy", "bundle", "dab", "release", "devops", "power bi"],
+    "cicd": ["ci/cd", "cicd", "azure devops", "github actions", "deploy", "bundle", "dab", "release", "devops", "orchestration", "airflow", "adf trigger"],
+    "fabric": ["fabric", "power bi", "onelake", "lakehouse", "semantic model", "direct lake", "warehouse", "dataflow"],
     "scenario": ["scenario", "troubleshoot", "how would you", "what if", "you need to", "you notice", "you are asked", "imagine"],
     "behavioral": ["tell me about", "your experience", "strength", "weakness", "team", "conflict", "challenge", "achievement"],
     "azure": ["azure", "adls", "blob", "synapse", "data lake", "key vault", "service principal", "managed identity", "sql database"],
@@ -28,11 +29,12 @@
   var TOPIC_NAMES = {
     "adf": "Azure Data Factory (ADF)",
     "azure": "Azure Services",
-    "cicd-fabric": "CI/CD, Orchestration & Microsoft Fabric",
+    "cicd": "CI/CD, Orchestration & Production",
+    "fabric": "Microsoft Fabric",
     "delta": "Delta Lake",
     "governance": "Unity Catalog, Governance & Security",
     "modeling": "Data Modeling & SCD",
-    "pyspark": "PySpark & Python",
+    "pyspark": "PySpark & Coding",
     "scenario": "Scenario-Based & Troubleshooting",
     "spark": "Apache Spark & Databricks Fundamentals",
     "sql": "SQL & Query Optimization",
@@ -49,7 +51,8 @@
     a = clean(a);
     if (!a) return "";
     if (/^\s*[\u2022\-\*]/m.test(a)) return a;
-    var parts = a.split(/(?<=[.;])\s+(?=[A-Z0-9])/).map(function (p) { return p.trim().replace(/\.$/, ""); }).filter(function (p) { return p.length > 4; });
+    var segmented = a.replace(/([.;])\s+(?=[A-Z0-9])/g, "$1\n");
+    var parts = segmented.split("\n").map(function (p) { return p.trim().replace(/\.$/, ""); }).filter(function (p) { return p.length > 4; });
     if (parts.length <= 1) return a;
     return parts.slice(0, 12).map(function (p) { return "\u2022 " + p; }).join("\n");
   }
@@ -83,7 +86,6 @@
     if (TOPIC_NAMES[tid]) return TOPIC_NAMES[tid];
     return tid ? tid.charAt(0).toUpperCase() + tid.slice(1) : "";
   }
-  function findTopicName(knownNames, tid) { return topicNameForId(tid); }
 
   // expose minimal helpers
   window.IPImport = {
@@ -120,8 +122,7 @@
       var items = [];
       var pending = input.files.length;
       function doneFile() { pending--; if (pending === 0) finish(); }
-      function finish() {
-        if (items.length === 0) { setStat("No Q&A extracted from files (check file types and content).", "error"); if (countOut) countOut.textContent = "0 pairs ready"; return; }
+      function finish() {        if (items.length === 0) { setStat("No Q&A extracted from files (check file types and content).", "error"); if (countOut) countOut.textContent = "0 pairs ready"; return; }
         if (countOut) countOut.textContent = items.length + " pairs ready";
         setStat("Reviewing for duplicates and classifying...", "");
         // classify + add
@@ -139,8 +140,6 @@
         setStat("Done. Added " + res.added + ", skipped " + res.skipped + ".", "info");
         if (result && res.byTopic) { result.textContent = Object.keys(res.byTopic).map(function (x) { return x + ": +" + res.byTopic[x]; }).join(" | "); result.hidden = false; }
       }
-      function readText(f, cb) { var r = new FileReader(); r.onload = function () { cb(String(r.result || "")); }; r.onerror = function () { cb(""); }; r.readAsText(f); }
-      function readBin(f, cb) { var r = new FileReader(); r.onload = function () { cb(r.result); }; r.onerror = function () { cb(null); }; r.readAsArrayBuffer(f); }
       for (var i = 0; i < input.files.length; i++) {
         (function (f) {
           var ext = (f.name || "").split(".").pop().toLowerCase();
@@ -160,6 +159,8 @@
     s.onload = onload; s.onerror = onerr || function () {};
     document.head.appendChild(s);
   }
+  function readText(f, cb) { var r = new FileReader(); r.onload = function () { cb(String(r.result || "")); }; r.onerror = function () { cb(""); }; r.readAsText(f); }
+  function readBin(f, cb) { var r = new FileReader(); r.onload = function () { cb(r.result); }; r.onerror = function () { cb(null); }; r.readAsArrayBuffer(f); }
   function loadPDF(f, done, items) {
     readBin(f, function (buf) {
       if (!buf) { done(); return; }

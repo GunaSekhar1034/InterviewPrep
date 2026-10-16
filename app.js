@@ -224,6 +224,8 @@
 
   function matchesCategory(topic) {
     if (state.category === "all") return true;
+    // "My Questions" (custom) is always visible regardless of category filter.
+    if (topic.custom || topic.id === MY_TOPIC_ID) return true;
     return (TOPIC_CATEGORIES[topic.id] || []).indexOf(state.category) !== -1;
   }
 
@@ -1166,6 +1168,12 @@
   el.search.addEventListener("input", function () {
     state.search = el.search.value.trim();
     el.clearSearch.classList.toggle("show", state.search.length > 0);
+    // Searching should look across every topic in the current role/category,
+    // not just the topic that happens to be selected.
+    if (state.search && state.topic !== "all") {
+      state.topic = "all";
+      renderSidebar();
+    }
     renderQuestions();
   });
   el.clearSearch.addEventListener("click", function () {
@@ -1334,6 +1342,8 @@
     add.overlay.hidden = true;
     setStatus("");
     add.result.hidden = true;
+    add.sources.innerHTML = "";
+    draft.sources = [];
     add.search.disabled = false;
     add.regen.disabled = false;
     busy = false;
@@ -1661,6 +1671,7 @@
       return;
     }
     draft.sources = [];
+    renderSources([]);
     add.answer.value = "";
     add.result.hidden = false;
     setStatus("Manual mode \u2014 type or paste the answer, then click <strong>Add to my list</strong>.", "info");
@@ -1760,7 +1771,6 @@
   function topicNameForId(tid) {
     var found = "";
     BASE_TOPICS.forEach(function (t) {
-      var cats = TOPIC_CATEGORIES[t.id] || [];
       if (t.id === tid && !found) found = t.name;
     });
     return found;

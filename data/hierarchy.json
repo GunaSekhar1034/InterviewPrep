@@ -7,17 +7,19 @@
       "topics": [
         {"id": "adf", "name": "Azure Data Factory (ADF)"},
         {"id": "azure", "name": "Azure Services"},
-        {"id": "cicd-fabric", "name": "CI/CD, Orchestration & Microsoft Fabric"},
-        {"id": "delta", "name": "Delta Lake"},
-        {"id": "governance", "name": "Unity Catalog, Governance & Security"},
-        {"id": "modeling", "name": "Data Modeling & SCD"},
-        {"id": "pyspark", "name": "PySpark & Python"},
-        {"id": "scenario", "name": "Scenario-Based & Troubleshooting"},
         {"id": "spark", "name": "Apache Spark & Databricks Fundamentals"},
+        {"id": "delta", "name": "Delta Lake"},
+        {"id": "pyspark", "name": "PySpark & Coding"},
         {"id": "sql", "name": "SQL & Query Optimization"},
+        {"id": "modeling", "name": "Data Modeling & SCD"},
         {"id": "streaming", "name": "Streaming & Ingestion"},
+        {"id": "governance", "name": "Unity Catalog, Governance & Security"},
         {"id": "architecture", "name": "Medallion Architecture & Data Platform Design"},
-        {"id": "behavioral", "name": "Behavioral, Project & HR"}
+        {"id": "cicd", "name": "CI/CD, Orchestration & Production"},
+        {"id": "fabric", "name": "Microsoft Fabric"},
+        {"id": "scenario", "name": "Scenario-Based & Troubleshooting"},
+        {"id": "behavioral", "name": "Behavioral, Project & HR"},
+        {"id": "imported", "name": "Imported from Documents"}
       ]
     },
     {
@@ -25,7 +27,7 @@
       "name": "Databricks Architect",
       "description": "Databricks Architect interview preparation",
       "topics": [
-        {"id": "architect", "name": "Databricks Architect Design & Consulting"},
+        {"id": "architect", "name": "Databricks Architect — Design & Consulting"},
         {"id": "spark", "name": "Apache Spark & Databricks Fundamentals"},
         {"id": "delta", "name": "Delta Lake"},
         {"id": "governance", "name": "Unity Catalog & Security"},
@@ -52,13 +54,13 @@
       "name": "AI Data Engineer",
       "description": "AI Data Engineering interview preparation",
       "topics": [
-        {"id": "pyspark", "name": "PySpark & Python"},
+        {"id": "pyspark", "name": "PySpark & Coding"},
         {"id": "delta", "name": "Delta Lake"},
-        {"id": "streaming", "name": "Streaming & Real-time Data"},
+        {"id": "streaming", "name": "Streaming & Ingestion"},
         {"id": "architecture", "name": "Data Architecture for AI"},
         {"id": "scenario", "name": "Scenario-Based Questions"},
         {"id": "sql", "name": "SQL & Query Optimization"},
-        {"id": "cicd-fabric", "name": "CI/CD & ML Ops"},
+        {"id": "cicd", "name": "CI/CD, Orchestration & Production"},
         {"id": "modeling", "name": "Data Modeling"}
       ]
     }
